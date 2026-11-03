@@ -1,0 +1,40 @@
+name: myworkflow_oct3
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+jobs:
+  myjobs1:
+    runs-on: ubuntu-latest
+    steps:
+
+        - name: mystep1- Checkout the source code
+          uses: actions/checkout@v4
+
+        - name: mystep2- Check if the source code is available in workspace or not
+        run: ls -al
+
+        - name: mystep3- Build Docker image
+          run: |
+          docker image build -t deepakrayka/myimage_oct3:t${{ github.run_number }} -f Dockerfile .
+        - name: mystep4- Check if the image is build success
+          run: docker images
+        - name: mystep5- Docker Login
+          uses: docker/login-action@v3
+          with:
+            username: ${{ secrets.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_TOKEN }}
+        - name: mystep6- Push the image to docker registry
+          run: |
+          docker image push deepakrayka/myimage_oct3:t${{ github.run_number }}
+        - name: mystep7- Login to Prod Server using Action
+        uses: appleboy/ssh-action@v1  
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            set -e
+            docker container rm -f prodcont && docker run --name prodcont -dit --network host deepakrayka/myimage_oct3:t${{ github.run_number }}
