@@ -29,12 +29,15 @@ jobs:
         - name: mystep6- Push the image to docker registry
           run: |
           docker image push deepakrayka/myimage_oct3:t${{ github.run_number }}
+        
         - name: mystep7- Login to Prod Server using Action
-        uses: appleboy/ssh-action@v1  
-        with:
+          uses: appleboy/ssh-action@v1
+          with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            set -e
-            docker container rm -f prodcont && docker run --name prodcont -dit --network host deepakrayka/myimage_oct3:t${{ github.run_number }}
+          set -e
+          docker rm -f prodcont || true
+          docker pull deepakrayka/myimage_oct3:t${{ github.run_number }}
+          docker run --name prodcont -dit --network host --restart unless-stopped deepakrayka/myimage_oct3:t${{ github.run_number }}
